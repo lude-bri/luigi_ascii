@@ -1,12 +1,4 @@
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-
-// Função para carregar os frames da pasta frames/
-function loadFrames() {
-    const frameDir = path.join(__dirname, 'frames');
-    const frameFiles = fs.readdirSync(frameDir)
         .filter(file => file.endsWith('.png.txt'))
         .sort((a, b) => {
             const numA = parseInt(a.match(/\d+/)[0], 10);
@@ -17,7 +9,7 @@ function loadFrames() {
     return frameFiles.map(file => fs.readFileSync(path.join(frameDir, file), 'utf8'));
 }
 
-// Porta fornecida pela Vercel ou 3000 localmente
+// Porta fornecida pelo ambiente ou 3000 localmente
 const PORT = process.env.PORT || 3000;
 
 // Criar o servidor HTTP
@@ -27,21 +19,20 @@ http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
 
         let frameIndex = 0;
-        const interval = setInterval(() => {
-            res.write('\033[2J\033[H');
-            res.write(frames[frameIndex]);
-            frameIndex = (frameIndex + 1) % frames.length;
-        }, 100);
 
+        // Enviar os frames em loop infinito
+        const interval = setInterval(() => {
+            res.write('\033[2J\033[H'); // Limpa o terminal
+            res.write(frames[frameIndex]); // Envia o próximo frame
+            frameIndex = (frameIndex + 1) % frames.length; // Reinicia o índice ao atingir o último frame
+        }, 100); // Intervalo entre frames (100ms)
+
+        // Encerrar animação quando o cliente fechar a conexão
         req.on('close', () => {
-            clearInterval(interval);
-            res.end();
+            clearInterval(interval); // Para o intervalo
+            res.end(); // Encerra a conexão
         });
     } else {
         res.writeHead(404);
-        res.end('404 Not Found');
+        res.end('404
     }
-}).listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
-
